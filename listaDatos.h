@@ -1,5 +1,6 @@
 #ifndef LISTADATOS_H
 #define LISTADATOS_H
+#define TAM_RESULTADO 30
 
 #include <stdbool.h>
 
@@ -42,3 +43,4 @@ bool esNulaLista(tipoLista);
 void imprimirLista(tipoLista lista);
 
 #endif
+
