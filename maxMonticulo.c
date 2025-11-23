@@ -105,3 +105,11 @@ void mostrarAnchura(tipoMaxMonticulo m)
                m.array[i].resultado);
     }
 }
+
+void liberarMaxMonticulo(tipoMaxMonticulo *m) {
+    free(m->array);
+    m->array = NULL;
+    m->pos = 0;
+    m->numEl = 0;
+}
+
