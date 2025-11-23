@@ -153,8 +153,7 @@ void compararK1todos(tipoLista* lista)
             recorrido = recorrido->sig;
         }
 
-        printf("Distancia mínima: %.4f, Valor real: %s, Valor predicho: %s\n",
-               distanciaMinima, resultadoReal, resultadoPredicho);
+        //printf("Distancia mínima: %.4f, Valor real: %s, Valor predicho: %s\n", distanciaMinima, resultadoReal, resultadoPredicho);
 
         if (strcmp(resultadoReal, resultadoPredicho) == 0)
         {
