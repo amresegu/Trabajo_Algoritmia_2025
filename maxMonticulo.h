@@ -28,6 +28,9 @@ bool esVacio(tipoMaxMonticulo m);
 
 bool estaLleno(tipoMaxMonticulo m);
 
+void liberarMaxMonticulo(tipoMaxMonticulo *m)
+
 #endif
+
 
 
