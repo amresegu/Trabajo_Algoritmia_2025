@@ -54,7 +54,7 @@ char **fragmenta(const char *e) {
         tok = strtok(NULL, ",\r\n");
     }
 
-    salida[i] = NULL;  // centinela
+    salida[i] = NULL;  
 
     free(cadena);
     return salida;
