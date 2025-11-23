@@ -4,45 +4,49 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-void nuevaLista(tipoLista * l)
+void nuevaLista(tipoLista *l)
 {
-    l -> ini = NULL;
-    l -> fin = NULL;
+    l->ini = NULL;
+    l->fin = NULL;
 }
 
-void insertar(tipoLista * l, tipoElementoLista e)
+void insertar(tipoLista *l, tipoElementoLista e)
 {
-    celdaLista* nuevo;
-
-    if (esNulaLista(*l))
-    {
-        nuevo = (celdaLista*)malloc(sizeof(celdaLista));
-        nuevo -> elem = e;
-        l -> ini = nuevo;
-        l -> fin = nuevo;
-        nuevo -> sig = NULL;
+    celdaLista *nuevo = (celdaLista *)malloc(sizeof(celdaLista));
+    if (nuevo == NULL) {
+        fprintf(stderr, "ERROR: no se pudo reservar memoria para nueva celda\n");
+        exit(EXIT_FAILURE);
     }
-    else
-    {
-        nuevo = (celdaLista*)malloc(sizeof(celdaLista));
-        nuevo -> elem = e;
-        l -> fin -> sig = nuevo;
-        l -> fin = nuevo;
-        nuevo -> sig = NULL;
+
+    nuevo->elem = e;
+    nuevo->sig = NULL;
+
+    if (esNulaLista(*l)) {
+        l->ini = nuevo;
+        l->fin = nuevo;
+    } else {
+        l->fin->sig = nuevo;
+        l->fin = nuevo;
     }
 }
-
 
 tipoElementoLista consultarPrimero(tipoLista l)
 {
-    return l.ini -> elem;
+    if (l.ini == NULL) {
+        fprintf(stderr, "ERROR: consultarPrimero sobre lista vacia\n");
+        exit(EXIT_FAILURE);
+    }
+    return l.ini->elem;
 }
 
 tipoElementoLista consultarUltimo(tipoLista l)
 {
-    return l.fin -> elem;
+    if (l.fin == NULL) {
+        fprintf(stderr, "ERROR: consultarUltimo sobre lista vacia\n");
+        exit(EXIT_FAILURE);
+    }
+    return l.fin->elem;
 }
-
 
 bool esNulaLista(tipoLista l)
 {
@@ -51,43 +55,43 @@ bool esNulaLista(tipoLista l)
 
 void eliminarLista(tipoLista *lista)
 {
-    celdaLista* auxRecorrido;
-    celdaLista* auxRecorridoSig;
-    if(!esNulaLista(*lista))
-    {
-        auxRecorrido = lista -> ini;
-        auxRecorridoSig = auxRecorrido -> sig;
-        while(auxRecorridoSig != NULL)
-        {
-            free(auxRecorrido);
-            auxRecorrido = auxRecorridoSig;
-            auxRecorridoSig = auxRecorridoSig -> sig;
-        }
-        free(auxRecorrido);
-        lista = NULL;
+    celdaLista *actual = lista->ini;
+    while (actual != NULL) {
+        celdaLista *sig = actual->sig;
+        free(actual);
+        actual = sig;
     }
+    lista->ini = NULL;
+    lista->fin = NULL;
 }
 
-void imprimir(Datos* datos)
+static void imprimir(Datos *datos)
 {
-    printf("%0.2f %s %0.2f %0.2f %s %0.2f %0.2f %s\n", datos->tiempo_a_solas, datos->miedoEscenico, datos->frec_asistencia_eventos, datos->frec_salidas, datos->agotamiento, datos->n_amigos_cercanos, datos->frec_publicacion_redes, datos->resultado);
+    printf("%0.2f %s %0.2f %0.2f %s %0.2f %0.2f %s\n",
+           datos->tiempo_a_solas,
+           datos->miedoEscenico,
+           datos->frec_asistencia_eventos,
+           datos->frec_salidas,
+           datos->agotamiento,
+           datos->n_amigos_cercanos,
+           datos->frec_publicacion_redes,
+           datos->resultado);
 }
 
 void imprimirLista(tipoLista lista)
 {
-    celdaLista* auxRecorrido;
-    int contador;
-    if(!esNulaLista(lista))
-    {
+    celdaLista *auxRecorrido;
+    int contador = 0;
+
+    if (!esNulaLista(lista)) {
         auxRecorrido = lista.ini;
-        contador = 0;
-        while(auxRecorrido != NULL)
-        {
-            imprimir(&(auxRecorrido -> elem));
-            auxRecorrido = auxRecorrido -> sig;
+        while (auxRecorrido != NULL) {
+            imprimir(&(auxRecorrido->elem));
+            auxRecorrido = auxRecorrido->sig;
             contador++;
         }
-        printf("Numero de filas: %d\n",contador);
+        printf("Numero de filas: %d\n", contador);
+    } else {
+        printf("Lista vacia\n");
     }
 }
-
