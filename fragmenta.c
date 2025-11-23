@@ -26,7 +26,6 @@ char **fragmenta(const char *e) {
     }
     free(s_temp);
 
-    // Añadimos espacio para el centinela NULL
     char **salida = malloc((tamano + 1) * sizeof(char *));
     if (salida == NULL) {
         fprintf(stderr, "ERROR: no se pudo reservar memoria en fragmenta\n");
