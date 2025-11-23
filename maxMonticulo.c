@@ -76,11 +76,9 @@ void eliminarElemento(tipoMaxMonticulo* m)
         }
 
         if (mayor == i) {
-            // Ya está en su posición correcta
             break;
         }
 
-        // Intercambiamos con el hijo mayor
         tipoElementoMaxMonticulo aux = m->array[i];
         m->array[i] = m->array[mayor];
         m->array[mayor] = aux;
