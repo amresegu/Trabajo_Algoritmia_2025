@@ -5,59 +5,71 @@
 
 char **fragmenta(const char *e) {
 
-    int tamano_de_tabla = 1;
-    char *s1, *s2;
-    char **salida = NULL;
-    char *s;
-
-    s1 = strdup(e);
-    s2 = strdup(e);
-
-    if (s1 == NULL || s2 == NULL) {
+    char *cadena = strdup(e);
+    if (cadena == NULL) {
         fprintf(stderr, "ERROR: no se pudo duplicar la cadena en fragmenta\n");
         exit(EXIT_FAILURE);
     }
-
-    s = strtok(s2, ",\r\n");
-    while (s != NULL) {
-        s = strtok(NULL, ",\r\n");
-        tamano_de_tabla++;
-    }
-
-    salida = (char **)malloc(tamano_de_tabla * sizeof(char *));
-    if (salida == NULL) {
-        fprintf(stderr, "ERROR: no se pudo reservar memoria en fragmenta\n");
-        free(s1);
-        free(s2);
+    
+    int tamano = 0;
+    char *s_temp = strdup(e);
+    if (s_temp == NULL) {
+        fprintf(stderr, "ERROR: no se pudo duplicar la cadena en fragmenta\n");
+        free(cadena);
         exit(EXIT_FAILURE);
     }
 
-    s = strtok(s1, ",\r\n");
+    char *tok = strtok(s_temp, ",\r\n");
+    while (tok != NULL) {
+        tamano++;
+        tok = strtok(NULL, ",\r\n");
+    }
+    free(s_temp);
+
+    // Añadimos espacio para el centinela NULL
+    char **salida = malloc((tamano + 1) * sizeof(char *));
+    if (salida == NULL) {
+        fprintf(stderr, "ERROR: no se pudo reservar memoria en fragmenta\n");
+        free(cadena);
+        exit(EXIT_FAILURE);
+    }
+
     int i = 0;
-    while (s != NULL) {
-        salida[i] = strdup(s);
+    tok = strtok(cadena, ",\r\n");
+
+    while (tok != NULL) {
+        salida[i] = strdup(tok);
         if (salida[i] == NULL) {
             fprintf(stderr, "ERROR: no se pudo duplicar token en fragmenta\n");
-            // Aquí podrías liberar lo ya reservado, pero para el trabajo puede valer así
+
+            // liberar lo ya reservado
+            for (int j = 0; j < i; j++) {
+                free(salida[j]);
+            }
+            free(salida);
+            free(cadena);
             exit(EXIT_FAILURE);
         }
-        s = strtok(NULL, ",\r\n");
+
         i++;
+        tok = strtok(NULL, ",\r\n");
     }
-    salida[tamano_de_tabla - 1] = NULL;   // centinela
 
-    free(s1);
-    free(s2);
+    salida[i] = NULL;  // centinela
 
+    free(cadena);
     return salida;
 }
 
 void borrarg(char **arg)
 {
+    if (!arg) return;
+
     int i = 0;
     while (arg[i] != NULL) {
         free(arg[i]);
         i++;
     }
+
     free(arg);
 }
