@@ -175,25 +175,25 @@ void compararK1todos(tipoLista* lista)
 void leerEjemploNuevo(Datos *d)
 {
     printf("\n--- Introducción de un ejemplo nuevo ---\n");
-    printf("Time_spent_Alone (0-11): ");
+    printf("Tiempo a solas (0-11): ");
     scanf("%f", &d->tiempo_a_solas);
 
-    printf("Stage_fear (Yes/No): ");
+    printf("Miedo escénico (Yes/No): ");
     scanf("%19s", d->miedoEscenico);
 
-    printf("Social_event_attendance (0-10): ");
+    printf("Asistencia a eventos (0-10): ");
     scanf("%f", &d->frec_asistencia_eventos);
 
-    printf("Going_outside (0-7): ");
+    printf(""Salir fuera (0-7): ");
     scanf("%f", &d->frec_salidas);
 
-    printf("Drained_after_socializing (Yes/No): ");
+    printf("Agotado tras socializar (Yes/No): ");
     scanf("%19s", d->agotamiento);
 
-    printf("Friends_circle_size (0-15): ");
+    printf("Número de amigos cercanos (0-15): ");
     scanf("%f", &d->n_amigos_cercanos);
 
-    printf("Post_frequency (0-10): ");
+    printf("Frecuencia publicación redes (0-10): ");
     scanf("%f", &d->frec_publicacion_redes);
 
     d->resultado[0] = '\0';
