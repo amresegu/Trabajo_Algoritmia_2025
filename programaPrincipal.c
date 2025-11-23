@@ -34,13 +34,13 @@ void normalizar (Datos* datos)
 
 void meterDatosStruct (Datos* datos, char** fg)
 {
-    datos -> tiempo_a_solas = atoi(fg[0]);
+    datos -> tiempo_a_solas = atof(fg[0]);
     strcpy(datos -> miedoEscenico, fg[1]);
-    datos -> frec_asistencia_eventos = atoi(fg[2]);
-    datos -> frec_salidas = atoi(fg[3]);
+    datos -> frec_asistencia_eventos = atof(fg[2]);
+    datos -> frec_salidas = atof(fg[3]);
     strcpy(datos -> agotamiento, fg[4]);
-    datos -> n_amigos_cercanos = atoi(fg[5]);
-    datos -> frec_publicacion_redes = atoi(fg[6]);
+    datos -> n_amigos_cercanos = atof(fg[5]);
+    datos -> frec_publicacion_redes = atof(fg[6]);
     strcpy(datos -> resultado, fg[7]);
 }
 
@@ -145,29 +145,25 @@ int main (void)
     nuevaLista(&lista);
 
     f = fopen("personality_datasert.csv", "r");
+    if (f == NULL) {
+        perror("Error al abrir el fichero");
+        return 1;
+    }
+    
     fgets(buffer1, 1000, f);
-
-    fg = fragmenta(buffer1);
-
-    meterDatosStruct(&datos, fg);
-    normalizar(&datos);
-
-    insertar(&lista, datos);
-
-    borrarg(fg);
 
     while (fgets(buffer1, 1000, f) != NULL)
     {
         fg = fragmenta(buffer1);
-
+    
         meterDatosStruct(&datos, fg);
-
         normalizar(&datos);
-
+    
         insertar(&lista, datos);
-
+    
         borrarg(fg);
     }
+    
     printf ("Clasificación de K1 con todos\n");
     compararK1todos(&lista);
 
