@@ -183,7 +183,7 @@ void leerEjemploNuevo(Datos *d)
     printf("Asistencia a eventos (0-10): ");
     scanf("%f", &d->frec_asistencia_eventos);
 
-    printf(""Salir fuera (0-7): ");
+    printf("Salir fuera (0-7): ");
     scanf("%f", &d->frec_salidas);
 
     printf("Agotado tras socializar (Yes/No): ");
