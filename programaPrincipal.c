@@ -133,7 +133,7 @@ void compararK1todos(tipoLista* lista)
 
     while (aComparar != NULL)
     {
-        distanciaMinima = MAX;
+        distanciaMinima = FLT_MAX;
 
         strcpy(resultadoReal, aComparar->elem.resultado);
 
@@ -197,10 +197,8 @@ void leerEjemploNuevo(Datos *d)
     printf("Post_frequency (0-10): ");
     scanf("%f", &d->frec_publicacion_redes);
 
-    // No pedimos Personality porque precisamente queremos predecirla
     d->resultado[0] = '\0';
 
-    // Estandarizamos a minúsculas las categóricas
     a_minusculas(d->miedoEscenico);
     a_minusculas(d->agotamiento);
 }
@@ -208,7 +206,7 @@ void leerEjemploNuevo(Datos *d)
 void clasificarEjemploNuevoK1(const Datos *nuevo, tipoLista *lista)
 {
     celdaLista *rec = lista->ini;
-    float distanciaMinima = MAX;
+    float distanciaMinima = FLT_MAX;
     float distanciaActual;
     char resultadoPredicho[TAM_RESULTADO];
 
@@ -260,7 +258,7 @@ int main (void)
     {
         fg = fragmenta(buffer1);
 
-        meterDatosStruct(&datos, fg);   // datos SIN normalizar
+        meterDatosStruct(&datos, fg);  
         actualizarRangos(&rangos, &datos);
         insertar(&lista, datos);
 
