@@ -31,7 +31,6 @@ void insertarMaxMonticulo(tipoMaxMonticulo* m, tipoElementoMaxMonticulo e)
         return;
     }
 
-    // Insertamos al final y flotar hacia arriba
     int i = m->pos;
     m->array[i] = e;
     m->pos++;
@@ -41,7 +40,6 @@ void insertarMaxMonticulo(tipoMaxMonticulo* m, tipoElementoMaxMonticulo e)
         if (m->array[i].distancia <= m->array[padre].distancia)
             break;
 
-        // Intercambiar con el padre
         tipoElementoMaxMonticulo aux = m->array[i];
         m->array[i] = m->array[padre];
         m->array[padre] = aux;
@@ -57,11 +55,9 @@ void eliminarElemento(tipoMaxMonticulo* m)
         return;
     }
 
-    // Sustituimos la raíz por el último elemento
     m->array[0] = m->array[m->pos - 1];
     m->pos--;
 
-    // Hundir hacia abajo (heapify-down)
     int i = 0;
 
     while (1) {
