@@ -15,6 +15,7 @@ void insertar(tipoLista *l, tipoElementoLista e)
     celdaLista *nuevo = (celdaLista *)malloc(sizeof(celdaLista));
     if (nuevo == NULL) {
         fprintf(stderr, "ERROR: no se pudo reservar memoria para nueva celda\n");
+        eliminarLista(l);
         exit(EXIT_FAILURE);
     }
 
@@ -95,3 +96,4 @@ void imprimirLista(tipoLista lista)
         printf("Lista vacia\n");
     }
 }
+
