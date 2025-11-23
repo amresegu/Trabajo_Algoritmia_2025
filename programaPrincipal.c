@@ -56,7 +56,6 @@ static void actualizarRangos(RangosAtributos *r, const Datos *d)
 static float normalizarValor(float v, Rango r)
 {
     if (r.max == r.min) {
-        // Evitar división por 0 si por algún motivo todos los valores son iguales
         return 0.0f;
     }
     return (v - r.min) / (r.max - r.min);
