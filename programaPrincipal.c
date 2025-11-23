@@ -9,8 +9,6 @@
 #include "listaDatos.h"
 #include "maxMonticulo.h"  
 
-#define MAX 999999.0f
-
 typedef struct {
     float min;
     float max;
