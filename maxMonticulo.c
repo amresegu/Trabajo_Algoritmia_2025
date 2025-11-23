@@ -3,97 +3,111 @@
 #include <stdlib.h>
 #include "maxMonticulo.h"
 
-void nuevoMaxMonticulo(tipoMaxMonticulo* t, int nume)
+void nuevoMaxMonticulo(tipoMaxMonticulo* m, int capacidad)
 {
-    t->array = (tipoElementoMaxMonticulo*)malloc(sizeof(tipoElementoMaxMonticulo) * nume);
-    t->pos = 0;
-    t->numEl = nume;
+    m->array = (tipoElementoMaxMonticulo*)malloc(sizeof(tipoElementoMaxMonticulo) * capacidad);
+    if (m->array == NULL) {
+        fprintf(stderr, "Error al reservar memoria para el monticulo\n");
+        exit(EXIT_FAILURE);
+    }
+    m->pos = 0;
+    m->numEl = capacidad;
 }
 
-void insertarMaxMonticulo(tipoMaxMonticulo *t, tipoElementoMaxMonticulo e)
+bool esVacio(tipoMaxMonticulo m)
 {
-    if (estaLleno(*t))
-    {
-            printf("\nERROR: El monticulo esta lleno\n");
+    return m.pos == 0;
+}
+
+bool estaLleno(tipoMaxMonticulo m)
+{
+    return m.pos == m.numEl;
+}
+
+void insertarMaxMonticulo(tipoMaxMonticulo* m, tipoElementoMaxMonticulo e)
+{
+    if (estaLleno(*m)) {
+        printf("\nERROR: El monticulo esta lleno\n");
+        return;
     }
-    else
-    {
-        tipoElementoMaxMonticulo aux;
-        int i;
-        t->array[t->pos] = e;
-        t->pos++;
-        i = t->pos - 1;
-        while (e.distancia > t->array[(i-1) / 2].distancia)
-        {
-            aux = t->array[i];
-            t->array[i] = t->array[(i-1) / 2];
-            t->array[(i-1) / 2] = aux;
-            i = (i-1) / 2;
-        }
+
+    // Insertamos al final y flotar hacia arriba
+    int i = m->pos;
+    m->array[i] = e;
+    m->pos++;
+
+    while (i > 0) {
+        int padre = (i - 1) / 2;
+        if (m->array[i].distancia <= m->array[padre].distancia)
+            break;
+
+        // Intercambiar con el padre
+        tipoElementoMaxMonticulo aux = m->array[i];
+        m->array[i] = m->array[padre];
+        m->array[padre] = aux;
+
+        i = padre;
     }
 }
 
-void eliminarElemento(tipoMaxMonticulo *t)
+void eliminarElemento(tipoMaxMonticulo* m)
 {
-    if (!esVacio(*t))
-    {
-        t -> array[0] = t -> array[t -> pos - 1];
-        t -> pos = t -> pos - 1;
-        int i = 0;
-        tipoElementoMaxMonticulo aux;
-        while((t->array[i].distancia < t->array[2*i+2].distancia && 2 * i + 2 <= t -> pos)|| (t->array[i].distancia < t->array[2*i+1].distancia && 2 * i + 2 <= t -> pos))
-        {
-            if (t->array[2*i+2].distancia > t->array[2*i+1].distancia)
-            {
-                aux = t->array[2*i+2];
-                t->array[2*i+2] = t->array[i];
-                t->array[i] = aux;
-                i = 2 * i + 2;
-            }
-            else
-            {
-                aux = t->array[2*i+1];
-                t->array[2*i+1] = t->array[i];
-                t->array[i] = aux;
-                i = 2 * i + 1;
-            }
-        }
-    }
-    else
-    {
+    if (esVacio(*m)) {
         printf("\nERROR: No se puede eliminar en monticulo vacio\n");
+        return;
+    }
 
+    // Sustituimos la raíz por el último elemento
+    m->array[0] = m->array[m->pos - 1];
+    m->pos--;
+
+    // Hundir hacia abajo (heapify-down)
+    int i = 0;
+
+    while (1) {
+        int hijoIzq = 2 * i + 1;
+        int hijoDer = 2 * i + 2;
+        int mayor = i;
+
+        if (hijoIzq < m->pos &&
+            m->array[hijoIzq].distancia > m->array[mayor].distancia) {
+            mayor = hijoIzq;
+        }
+
+        if (hijoDer < m->pos &&
+            m->array[hijoDer].distancia > m->array[mayor].distancia) {
+            mayor = hijoDer;
+        }
+
+        if (mayor == i) {
+            // Ya está en su posición correcta
+            break;
+        }
+
+        // Intercambiamos con el hijo mayor
+        tipoElementoMaxMonticulo aux = m->array[i];
+        m->array[i] = m->array[mayor];
+        m->array[mayor] = aux;
+
+        i = mayor;
     }
 }
 
-tipoElementoMaxMonticulo devolverRaiz(tipoMaxMonticulo t)
+tipoElementoMaxMonticulo devolverRaiz(tipoMaxMonticulo m)
 {
-    if (!esVacio(t))
-    {
-        return t.array[0];
-    }
-    else
-    {
+    if (!esVacio(m)) {
+        return m.array[0];
+    } else {
         printf("\nERROR: No hay raiz en monticulo vacio\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 }
 
-void mostrarAnchura(tipoMaxMonticulo t)
+void mostrarAnchura(tipoMaxMonticulo m)
 {
-    for(int i = 0; i < t.pos; i++)
-    {
-        printf("%f ", t.array[i].distancia);
-        printf("%d\n", t.array[i].alcohol);
+    for (int i = 0; i < m.pos; i++) {
+        printf("distancia = %f, resultado = %s\n",
+               m.array[i].distancia,
+               m.array[i].resultado);
     }
-}
-
-bool esVacio(tipoMaxMonticulo t)
-{
-    return t.pos == 0;
-}
-
-bool estaLleno(tipoMaxMonticulo t)
-{
-    return t.pos == t.numEl;
 }
