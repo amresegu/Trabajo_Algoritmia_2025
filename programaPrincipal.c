@@ -236,6 +236,104 @@ void clasificarEjemploNuevoK1(const Datos *nuevo, tipoLista *lista)
     printf("Distancia mínima: %.4f\n", distanciaMinima);
 }
 
+
+float compararKNN(tipoLista* lista, int num, bool escribir) {
+
+    celdaLista* aComparar = lista -> ini; //Puntero al 1er elemento de la lista;
+    celdaLista* recorrido;
+
+    float distanciaActual;//distancia2 Distancia entre elementos
+
+    char resultadoReal[TAM_RESULTADO];  //resultado verdadero del elemento a comparar
+    char resultadoPredicho[TAM_RESULTADO];
+
+    float total = 0.0f;
+    float acertados = 0.0f;
+
+    tipoMaxMonticulo mon;
+    tipoElementoMaxMonticulo tupla;
+    nuevoMaxMonticulo(&mon,num);
+
+    while (aComparar != NULL) {
+        tupla.distancia = MAX;
+        strcpy(tupla.resultado, "");
+
+        /*while (!esVacio(mon)){ //Vacia el monticulo, sobraaaa, recien creado
+            eliminarElemento(&mon);
+        }*/
+        while (!estaLleno(mon)){ //Lo llena de distancias maximas
+            insertarMaxMonticulo(&mon,tupla);
+        }
+
+        strcpy(resultadoReal, aComparar->elem.resultado);//Recogemos en esta variable el valor que queremos acertar
+        recorrido = lista -> ini;
+
+        while(recorrido != NULL) {
+            if(recorrido != aComparar) {
+                distanciaActual = calcularDistancia(recorrido -> elem, aComparar);
+                if(devolverRaiz(mon).distancia > distanciaActual) {//Si nuestra distancia es menor que la distancia de la raiz, metemos nuestro dato
+                    eliminarElemento(&mon);
+                    tupla.distancia = distanciaActual;
+                    strcpy(tupla.resultado, recorrido->elem.resultado);
+                    insertarMaxMonticulo(&mon, tupla);
+                }
+            }
+            recorrido = recorrido -> sig;
+        }
+        if(escribir) {//Para printear o no
+            printf("\n\nEl resultado que buscamos es de %s ", resultadoReal);
+        }
+
+// HASTA AQUI ESTA BIEN
+
+        int conteo[TAM_RESULTADO][2]; //Array en el que guardamos [0]la cantidad que acierta de cada tipo(entre 0/75) y [1]la distancia mínima a través del struct compFinal
+        int clases = 0;
+        for(int i = 0; i < num; i++){
+            int encontrada = 0 ;
+            for(int j = 0; j< clases; j++){
+                if(strcmp(mon.array[i].resultado, (char*)conteo[j]) == 0){
+                    encontrada = 0;
+                    conteo[j][0]++;
+                    if(mon.array[i].distancia < conteo[j][1]){
+                        conteo[j][1] = mon.array[i].distancia;
+                        break;
+                    }
+                }
+            }
+            if(!encontrada){
+                strcpy((char*)conteo[clases], mon.array[i].resultado);
+                conteo[clases][0] = 1;
+                conteo[clases][1] = mon.array[i].distancia;
+                clases++;
+            }
+        }
+        //elegimos la clase con mas votos(o nmenor distancia si empate)
+        int maxCant = 0;
+        float minDist = MAX;
+
+        for(int j = 0; j< clases; j++){
+                if(conteo[j][0] > maxCant || (conteo[j][0] == maxCant && conteo[j][1] < minDist)){
+                    maxCant = conteo[j][0];
+                    minDist = conteo[j][1];
+                    strcpy(resultadoPredicho, (char*)conteo[j]);
+                }
+        }
+
+        if(strcmp(aComparar->elem.resultado, resultadoPredicho) == 0){
+            acertados++;
+        }
+        total++;
+        aComparar = aComparar->sig;
+    }
+    float porcentaje = (acertados / total) * 100.0f;
+    if(escribir){
+        printf("TOTAL DATOS: %.0f, Aciertos: %.0f, Fallos: %.0f\n", total, acertados, total-acertados);
+        printf("%.2f%% de aciertos\n", porcentaje);
+    }
+    return(porcentaje);
+}
+
+
 // Funcion Wilson (Falta funcion KNNyAñadirNuevaLista)
 
 tipoLista wilson (tipoLista* lista, int mejork)
