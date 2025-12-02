@@ -13,9 +13,10 @@ listaDatos.o: listaDatos.c listaDatos.h
 maxMonticulo.o: maxMonticulo.c maxMonticulo.h listaDatos.h
 	gcc -Wall -g -c maxMonticulo.c
 
-# Ejecutar y guardar la salida en salida.txt
+# Ejecutar y guardar la salida en salida.txt (sin buffering)
 log: programaPrincipal
-	./programaPrincipal | tee salida.txt
+	stdbuf -o0 ./programaPrincipal | tee salida.txt
 
 clean:
 	rm -f fragmenta.o listaDatos.o maxMonticulo.o programaPrincipal salida.txt
+
