@@ -35,6 +35,62 @@ static void a_minusculas(char *s)
     }
 }
 
+// Limpia el buffer de entrada tras un scanf que falla o deja basura
+static void limpiarBufferEntrada(void)
+{
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        // descartar
+    }
+}
+
+// Lee un float en un rango [min, max], repitiendo hasta que sea válido
+static float leerFloatEnRango(const char *mensaje, float min, float max)
+{
+    float valor;
+    int ok;
+
+    do {
+        printf("%s", mensaje);
+        ok = scanf("%f", &valor);
+        if (ok != 1) {
+            printf("ERROR: Debe introducir un número.\n");
+            limpiarBufferEntrada();
+            continue;
+        }
+        if (valor < min || valor > max) {
+            printf("ERROR: Valor fuera de rango [%.2f, %.2f].\n", min, max);
+        }
+    } while (ok != 1 || valor < min || valor > max);
+
+    limpiarBufferEntrada(); // limpiar posible resto en la línea
+    return valor;
+}
+
+// Lee un Yes/No (adaptado al dataset: "yes" / "no") y lo guarda en minúsculas
+static void leerYesNo(const char *mensaje, char *dest)
+{
+    int valido;
+    do {
+        printf("%s", mensaje);
+        if (scanf("%19s", dest) != 1) {
+            printf("ERROR: Entrada no válida.\n");
+            limpiarBufferEntrada();
+            valido = 0;
+            continue;
+        }
+        limpiarBufferEntrada();
+        a_minusculas(dest);
+
+        if (strcmp(dest, "yes") == 0 || strcmp(dest, "no") == 0) {
+            valido = 1;
+        } else {
+            printf("ERROR: Debe escribir Yes o No.\n");
+            valido = 0;
+        }
+    } while (!valido);
+}
+
 static void inicializarRangos(RangosAtributos *r)
 {
     r->tiempo_a_solas.min           = FLT_MAX;  r->tiempo_a_solas.max           = -FLT_MAX;
@@ -182,31 +238,28 @@ void compararK1todos(tipoLista* lista)
 void leerEjemploNuevo(Datos *d)
 {
     printf("\n--- Introducción de un ejemplo nuevo ---\n");
-    printf("Tiempo a solas (0-11): ");
-    scanf("%f", &d->tiempo_a_solas);
 
-    printf("Miedo escénico (Yes/No): ");
-    scanf("%19s", d->miedoEscenico);
+    d->tiempo_a_solas =
+        leerFloatEnRango("Tiempo a solas (0-11): ", 0.0f, 11.0f);
 
-    printf("Asistencia a eventos (0-10): ");
-    scanf("%f", &d->frec_asistencia_eventos);
+    leerYesNo("Miedo escénico (Yes/No): ", d->miedoEscenico);
 
-    printf("Salir fuera (0-7): ");
-    scanf("%f", &d->frec_salidas);
+    d->frec_asistencia_eventos =
+        leerFloatEnRango("Asistencia a eventos (0-10): ", 0.0f, 10.0f);
 
-    printf("Agotado tras socializar (Yes/No): ");
-    scanf("%19s", d->agotamiento);
+    d->frec_salidas =
+        leerFloatEnRango("Salir fuera (0-7): ", 0.0f, 7.0f);
 
-    printf("Número de amigos cercanos (0-15): ");
-    scanf("%f", &d->n_amigos_cercanos);
+    leerYesNo("Agotado tras socializar (Yes/No): ", d->agotamiento);
 
-    printf("Frecuencia publicación redes (0-10): ");
-    scanf("%f", &d->frec_publicacion_redes);
+    d->n_amigos_cercanos =
+        leerFloatEnRango("Número de amigos cercanos (0-15): ", 0.0f, 15.0f);
 
+    d->frec_publicacion_redes =
+        leerFloatEnRango("Frecuencia publicación redes (0-10): ", 0.0f, 10.0f);
+
+    // En un ejemplo nuevo no conocemos la clase real
     d->resultado[0] = '\0';
-
-    a_minusculas(d->miedoEscenico);
-    a_minusculas(d->agotamiento);
 }
 
 /* ===================== K-NN GENÉRICO (CON MONTÍCULO) ===================== */
@@ -431,7 +484,6 @@ int main (void)
 
     int input, numMon;
     float porcentajeKNN;
-    char cont;
 
     nuevaLista(&lista);
     inicializarRangos(&rangos);
@@ -473,21 +525,49 @@ int main (void)
     Datos ejemploNuevo;
     leerEjemploNuevo(&ejemploNuevo);
     normalizarDatos(&ejemploNuevo, &rangos);
-    clasificarEjemploNuevoK(&ejemploNuevo, &lista, 1);
+
+    int kNuevo;
+    do {
+        printf("Elige K para clasificar el ejemplo nuevo (entero >=1): ");
+        if (scanf("%d", &kNuevo) != 1) {
+            printf("ERROR: Debe introducir un entero.\n");
+            limpiarBufferEntrada();
+            kNuevo = 0;
+            continue;
+        }
+        limpiarBufferEntrada();
+        if (kNuevo < 1) {
+            printf("ERROR: K debe ser al menos 1.\n");
+        }
+    } while (kNuevo < 1);
+
+    clasificarEjemploNuevoK(&ejemploNuevo, &lista, kNuevo);
 
     /* Menú de opciones */
-    do
+    int salir = 0;
+
+    while (!salir)
     {
         printf("\n¿Qué quieres hacer?\n");
+        printf(" 0 - Salir\n");
         printf(" 1 - K = 1 con todos\n");
         printf(" 2 - KNN con K elegido\n");
         printf(" 3 - Wilson con la mejor K\n");
         printf(" 4 - Wilson con K cualquiera\n");
         printf(" 5 - Estudio precisión vs K y nº de ejemplos\n");
         printf("Opción: ");
-        scanf("%d", &input);
+        if (scanf("%d", &input) != 1) {
+            printf("ERROR: Debe introducir un entero.\n");
+            limpiarBufferEntrada();
+            continue;
+        }
+        limpiarBufferEntrada();
 
-        if (input == 1)
+        if (input == 0)
+        {
+            salir = 1;
+        }
+        else if (input == 1)
         {
             printf("\nClasificación de K=1 con todos los datos\n");
             compararK1todos (&lista);
@@ -495,7 +575,16 @@ int main (void)
         else if (input == 2)
         {
             printf("¿Con cuántos vecinos quieres comparar (K)?: ");
-            scanf("%d", &numMon);
+            if (scanf("%d", &numMon) != 1) {
+                printf("ERROR: Debe introducir un entero.\n");
+                limpiarBufferEntrada();
+                continue;
+            }
+            limpiarBufferEntrada();
+            if (numMon < 1) {
+                printf("ERROR: K debe ser al menos 1.\n");
+                continue;
+            }
             porcentajeKNN = compararKNN (&lista, numMon, true);
         }
         else if(input == 3)
@@ -531,7 +620,16 @@ int main (void)
         else if(input == 4)
         {
             printf("¿Con cuántos vecinos quieres comparar (K)?: ");
-            scanf("%d", &numMon);
+            if (scanf("%d", &numMon) != 1) {
+                printf("ERROR: Debe introducir un entero.\n");
+                limpiarBufferEntrada();
+                continue;
+            }
+            limpiarBufferEntrada();
+            if (numMon < 1) {
+                printf("ERROR: K debe ser al menos 1.\n");
+                continue;
+            }
 
             lista = wilson (&lista, numMon);
             imprimirLista (lista);
@@ -543,7 +641,12 @@ int main (void)
 
             printf("La lista tiene %d ejemplos.\n", total);
             printf("¿Cada cuántos ejemplos quieres muestrear? (p.ej. 100): ");
-            scanf("%d", &pasoEjemplos);
+            if (scanf("%d", &pasoEjemplos) != 1) {
+                printf("ERROR: Debe introducir un entero.\n");
+                limpiarBufferEntrada();
+                continue;
+            }
+            limpiarBufferEntrada();
 
             if (pasoEjemplos <= 0) pasoEjemplos = total;
 
@@ -571,11 +674,7 @@ int main (void)
         {
             printf("Opción no válida.\n");
         }
-
-        printf("\n¿Deseas continuar? (s/n): ");
-        scanf(" %c", &cont);
-
-    } while(cont == 's' || cont == 'S');
+    }
 
     /* Eliminar lista y salir */
     eliminarLista(&lista);
