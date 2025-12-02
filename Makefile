@@ -1,17 +1,21 @@
-all: programaPrincipal fragmenta lista maxMonticulo
+all: programaPrincipal
 	./programaPrincipal
 
-programaPrincipal: fragmenta lista maxMonticulo
-	gcc programaPrincipal.c fragmenta.o listaDatos.o maxMonticulo.o -o programaPrincipal -Wall -lm -g
+programaPrincipal: programaPrincipal.c fragmenta.o listaDatos.o maxMonticulo.o
+	gcc -Wall -g programaPrincipal.c fragmenta.o listaDatos.o maxMonticulo.o -lm -o programaPrincipal
 
-fragmenta:
-	gcc -c fragmenta.c -Wall -g
+fragmenta.o: fragmenta.c fragmenta.h
+	gcc -Wall -g -c fragmenta.c
 
-lista:
-	gcc -c listaDatos.c -Wall -g
+listaDatos.o: listaDatos.c listaDatos.h
+	gcc -Wall -g -c listaDatos.c
 
-maxMonticulo:
-	gcc -c maxMonticulo.c -Wall -g
+maxMonticulo.o: maxMonticulo.c maxMonticulo.h listaDatos.h
+	gcc -Wall -g -c maxMonticulo.c
+
+# Ejecutar y guardar la salida en salida.txt
+log: programaPrincipal
+	./programaPrincipal | tee salida.txt
 
 clean:
-	rm fragmenta.o programaPrincipal listaDatos.o maxMonticulo.o
+	rm -f fragmenta.o listaDatos.o maxMonticulo.o programaPrincipal salida.txt
