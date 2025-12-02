@@ -2,16 +2,17 @@
 #define MAXMONTICULO_H
 
 #include <stdbool.h>
+#include "listaDatos.h"   
 
 typedef struct tipoElementoMaxMonticulo {
     float distancia;
-    char resultado[20];
+    char resultado[TAM_RESULTADO];   
 } tipoElementoMaxMonticulo;
 
 typedef struct tMM {
     tipoElementoMaxMonticulo* array;  
-    int pos;                          
-    int numEl;                        
+    int pos;  
+    int numEl;        
 } tipoMaxMonticulo;
 
 void nuevoMaxMonticulo(tipoMaxMonticulo* m, int capacidad);

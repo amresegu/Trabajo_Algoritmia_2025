@@ -1,5 +1,6 @@
 #ifndef LISTADATOS_H
 #define LISTADATOS_H
+
 #define TAM_RESULTADO 30
 
 #include <stdbool.h>
@@ -13,7 +14,7 @@ typedef struct Datos
     char agotamiento[20];
     float n_amigos_cercanos;
     float frec_publicacion_redes;
-    char resultado[30];
+    char resultado[TAM_RESULTADO];
 } Datos;
 
 typedef Datos tipoElementoLista;
@@ -43,4 +44,3 @@ bool esNulaLista(tipoLista);
 void imprimirLista(tipoLista lista);
 
 #endif
-

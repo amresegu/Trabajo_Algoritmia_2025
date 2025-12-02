@@ -95,4 +95,3 @@ void imprimirLista(tipoLista lista)
         printf("Lista vacia\n");
     }
 }
-

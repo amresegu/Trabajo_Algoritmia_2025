@@ -41,7 +41,6 @@ char **fragmenta(const char *e) {
         if (salida[i] == NULL) {
             fprintf(stderr, "ERROR: no se pudo duplicar token en fragmenta\n");
 
-            // liberar lo ya reservado
             for (int j = 0; j < i; j++) {
                 free(salida[j]);
             }

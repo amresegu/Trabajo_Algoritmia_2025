@@ -5,7 +5,8 @@
 
 void nuevoMaxMonticulo(tipoMaxMonticulo* m, int capacidad)
 {
-    m->array = (tipoElementoMaxMonticulo*)malloc(sizeof(tipoElementoMaxMonticulo) * capacidad);
+    m->array = (tipoElementoMaxMonticulo*)
+        malloc(sizeof(tipoElementoMaxMonticulo) * capacidad);
     if (m->array == NULL) {
         fprintf(stderr, "Error al reservar memoria para el monticulo\n");
         exit(EXIT_FAILURE);
@@ -27,7 +28,7 @@ bool estaLleno(tipoMaxMonticulo m)
 void insertarMaxMonticulo(tipoMaxMonticulo* m, tipoElementoMaxMonticulo e)
 {
     if (estaLleno(*m)) {
-        printf("\nERROR: El monticulo esta lleno\n");
+        fprintf(stderr, "ERROR: El monticulo esta lleno\n");
         return;
     }
 
@@ -51,7 +52,7 @@ void insertarMaxMonticulo(tipoMaxMonticulo* m, tipoElementoMaxMonticulo e)
 void eliminarElemento(tipoMaxMonticulo* m)
 {
     if (esVacio(*m)) {
-        printf("\nERROR: No se puede eliminar en monticulo vacio\n");
+        fprintf(stderr, "ERROR: No se puede eliminar en monticulo vacio\n");
         return;
     }
 
@@ -92,7 +93,7 @@ tipoElementoMaxMonticulo devolverRaiz(tipoMaxMonticulo m)
     if (!esVacio(m)) {
         return m.array[0];
     } else {
-        printf("\nERROR: No hay raiz en monticulo vacio\n");
+        fprintf(stderr, "ERROR: No hay raiz en monticulo vacio\n");
         exit(EXIT_FAILURE);
     }
 }

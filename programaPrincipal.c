@@ -1,20 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <math.h>
-
 #include <unistd.h>
-
 #include <float.h>
-
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "fragmenta.h"
 #include "listaDatos.h"
-#include "maxMonticulo.h"  
+#include "maxMonticulo.h"
 
-#define MAX 999999
+#define MAX_CLASES 10   // nº máximo de clases distintas a considerar
 
 typedef struct {
     float min;
@@ -28,6 +25,8 @@ typedef struct {
     Rango n_amigos_cercanos;
     Rango frec_publicacion_redes;
 } RangosAtributos;
+
+/* ===================== FUNCIONES AUXILIARES ===================== */
 
 static void a_minusculas(char *s)
 {
@@ -121,10 +120,9 @@ float calcularDistancia(Datos dato, celdaLista* celda)
            * (dato.frec_publicacion_redes - celda->elem.frec_publicacion_redes);
 
     return sqrtf(total);
-
 }
 
-// Funcion K1 Con Todos
+/* ===================== K = 1 CON TODOS ===================== */
 
 void compararK1todos(tipoLista* lista)
 {
@@ -163,8 +161,6 @@ void compararK1todos(tipoLista* lista)
             recorrido = recorrido->sig;
         }
 
-        //printf("Distancia mínima: %.4f, Valor real: %s, Valor predicho: %s\n", distanciaMinima, resultadoReal, resultadoPredicho);
-
         if (strcmp(resultadoReal, resultadoPredicho) == 0)
         {
             acertados += 1.0f;
@@ -180,6 +176,8 @@ void compararK1todos(tipoLista* lista)
     printf("\n\nTotal datos: %.0f, Aciertos: %.0f, Fallos: %.0f", total, acertados, fallos);
     printf("\n%.2f%% de acierto\n", porcentaje);
 }
+
+/* ===================== EJEMPLO NUEVO ===================== */
 
 void leerEjemploNuevo(Datos *d)
 {
@@ -211,168 +209,215 @@ void leerEjemploNuevo(Datos *d)
     a_minusculas(d->agotamiento);
 }
 
-void clasificarEjemploNuevoK1(const Datos *nuevo, tipoLista *lista)
-{
-    celdaLista *rec = lista->ini;
-    float distanciaMinima = FLT_MAX;
-    float distanciaActual;
-    char resultadoPredicho[TAM_RESULTADO];
+/* ===================== K-NN GENÉRICO (CON MONTÍCULO) ===================== */
 
-    if (rec == NULL) {
-        printf("ERROR: lista vacía, no se puede clasificar.\n");
+/* Decide la clase mayoritaria entre los K vecinos almacenados en el montículo */
+static void claseMayoritariaDesdeMonticulo(tipoMaxMonticulo *mon, char *resultadoPredicho)
+{
+    char clasesDistintas[MAX_CLASES][TAM_RESULTADO];
+    int conteo[MAX_CLASES];
+    float minDist[MAX_CLASES];
+    int clases = 0;
+
+    if (mon->pos == 0) {
+        resultadoPredicho[0] = '\0';
         return;
     }
 
+    for (int i = 0; i < mon->pos; ++i) {
+        if (mon->array[i].resultado[0] == '\0') {
+            continue; // vecinos "vacíos"
+        }
+
+        int idx = -1;
+        for (int j = 0; j < clases; ++j) {
+            if (strcmp(clasesDistintas[j], mon->array[i].resultado) == 0) {
+                idx = j;
+                break;
+            }
+        }
+
+        if (idx == -1) {
+            if (clases >= MAX_CLASES) {
+                continue;
+            }
+            idx = clases++;
+            strcpy(clasesDistintas[idx], mon->array[i].resultado);
+            conteo[idx] = 0;
+            minDist[idx] = FLT_MAX;
+        }
+
+        conteo[idx]++;
+        if (mon->array[i].distancia < minDist[idx]) {
+            minDist[idx] = mon->array[i].distancia;
+        }
+    }
+
+    int mejor = 0;
+    for (int j = 1; j < clases; ++j) {
+        if (conteo[j] > conteo[mejor] ||
+            (conteo[j] == conteo[mejor] && minDist[j] < minDist[mejor])) {
+            mejor = j;
+        }
+    }
+
+    strcpy(resultadoPredicho, clasesDistintas[mejor]);
+}
+
+/* Predice la clase de un ejemplo usando KNN sobre la lista, opcionalmente ignorando una celda concreta */
+static void predecirClaseKNN(const Datos *ejemplo, tipoLista *lista, int k,
+                             const celdaLista *aIgnorar, char *resultadoPredicho)
+{
+    tipoMaxMonticulo mon;
+    tipoElementoMaxMonticulo tupla;
+    celdaLista *rec;
+
+    if (k <= 0) {
+        fprintf(stderr, "ERROR: K debe ser mayor que 0\n");
+        exit(EXIT_FAILURE);
+    }
+
+    nuevoMaxMonticulo(&mon, k);
+
+    tupla.distancia = FLT_MAX;
+    tupla.resultado[0] = '\0';
+
+    // Inicializamos el montículo con K tuplas "vacías"
+    for (int i = 0; i < k; ++i) {
+        insertarMaxMonticulo(&mon, tupla);
+    }
+
+    rec = lista->ini;
     while (rec != NULL) {
-        distanciaActual = calcularDistancia(*nuevo, rec);
-        if (distanciaActual < distanciaMinima) {
-            distanciaMinima = distanciaActual;
-            strcpy(resultadoPredicho, rec->elem.resultado);
+        if (rec != aIgnorar) {
+            float distanciaActual = calcularDistancia(*ejemplo, rec);
+
+            if (distanciaActual < devolverRaiz(mon).distancia) {
+                eliminarElemento(&mon);
+                tupla.distancia = distanciaActual;
+                strcpy(tupla.resultado, rec->elem.resultado);
+                insertarMaxMonticulo(&mon, tupla);
+            }
         }
         rec = rec->sig;
     }
 
-    printf("\n--- Clasificación de ejemplo nuevo (K=1) ---\n");
-    printf("Clase predicha: %s\n", resultadoPredicho);
-    printf("Distancia mínima: %.4f\n", distanciaMinima);
-    printf ("\n");
+    claseMayoritariaDesdeMonticulo(&mon, resultadoPredicho);
+    liberarMaxMonticulo(&mon);
 }
 
-// Funcion KNN (No funciona bien)
-
-float compararKNN (tipoLista* lista, int num, bool escribir)
+void clasificarEjemploNuevoK(const Datos *nuevo, tipoLista *lista, int k)
 {
-    celdaLista* aComparar = lista -> ini; //Puntero al 1er elemento de la lista;
-    celdaLista* recorrido;
-
-    float distanciaActual;
-
-    char resultadoReal[TAM_RESULTADO];
     char resultadoPredicho[TAM_RESULTADO];
 
+    predecirClaseKNN(nuevo, lista, k, NULL, resultadoPredicho);
+
+    printf("\n--- Clasificación de ejemplo nuevo (K=%d) ---\n", k);
+    printf("Clase predicha: %s\n", resultadoPredicho);
+    printf("-------------------------------------------------\n");
+}
+
+/* Compara KNN sobre todo el conjunto (leave-one-out) */
+float compararKNN (tipoLista* lista, int k, bool escribir)
+{
+    celdaLista* aComparar = lista->ini;
     float total = 0.0f;
     float acertados = 0.0f;
 
-    tipoMaxMonticulo mon;
-    tipoElementoMaxMonticulo tupla;
+    if (lista->ini == NULL) {
+        printf("ERROR: lista vacía, no se puede aplicar KNN\n");
+        return 0.0f;
+    }
 
-    nuevoMaxMonticulo (&mon,num);
+    char resultadoPredicho[TAM_RESULTADO];
 
     while (aComparar != NULL)
     {
-        tupla.distancia = MAX;
-        strcpy (tupla.resultado, "");
+        predecirClaseKNN(&aComparar->elem, lista, k, aComparar, resultadoPredicho);
 
-        while (!estaLleno(mon))
-        {
-            insertarMaxMonticulo (&mon,tupla);
+        if (escribir) {
+            printf("Ejemplo real: %s, predicho: %s\n",
+                   aComparar->elem.resultado, resultadoPredicho);
         }
 
-        strcpy (resultadoReal, aComparar -> elem.resultado);
-        recorrido = lista -> ini;
-
-        while (recorrido != NULL)
-        {
-            if (recorrido != aComparar)
-            {
-                distanciaActual = calcularDistancia (recorrido -> elem, aComparar);
-
-                if (devolverRaiz(mon).distancia > distanciaActual)
-                {
-                    eliminarElemento(&mon);
-                    tupla.distancia = distanciaActual;
-
-                    strcpy (tupla.resultado, recorrido -> elem.resultado);
-                    insertarMaxMonticulo (&mon, tupla);
-                }
-            }
-            recorrido = recorrido -> sig;
+        if (strcmp(aComparar->elem.resultado, resultadoPredicho) == 0) {
+            acertados += 1.0f;
         }
+        total += 1.0f;
 
-        if (escribir)
-        {
-            printf("\n\nEl resultado que buscamos es de %s ", resultadoReal);
-        }
-
-        int conteo [TAM_RESULTADO][2];
-        int clases = 0;
-
-        for (int i = 0; i < num; i = i + 1)
-        {
-            int encontrada = 0;
-
-            for (int j = 0; j< clases; j = j + 2)
-            {
-                if (strcmp (mon.array[i].resultado, (char*)conteo[j]) == 0)
-                {
-                    encontrada = 0;
-                    conteo[j][0]++;
-
-                    if (mon.array[i].distancia < conteo[j][1])
-                    {
-                        conteo[j][1] = mon.array[i].distancia;
-                        break;
-                    }
-                }
-            }
-
-            if (!encontrada)
-            {
-                strcpy((char*)conteo[clases], mon.array[i].resultado);
-
-                conteo[clases][0] = 1;
-                conteo[clases][1] = mon.array[i].distancia;
-
-                clases = clases + 1;
-            }
-        }
-
-        int maxCant = 0;
-        float minDist = MAX;
-
-        for (int j = 0; j< clases; j = j + 1)
-        {
-                if (conteo[j][0] > maxCant || (conteo[j][0] == maxCant && conteo[j][1] < minDist))
-                {
-                    maxCant = conteo[j][0];
-                    minDist = conteo[j][1];
-
-                    strcpy (resultadoPredicho, (char*)conteo[j]);
-                }
-        }
-
-        if (strcmp(aComparar->elem.resultado, resultadoPredicho) == 0)
-        {
-            acertados = acertados + 1;
-        }
-        total = total + 1;
-
-        aComparar = aComparar -> sig;
+        aComparar = aComparar->sig;
     }
 
     float porcentaje = (acertados / total) * 100.0f;
 
-    if (escribir)
-    {
-        printf("TOTAL DATOS: %.0f, Aciertos: %.0f, Fallos: %.0f\n", total, acertados, total - acertados);
+    if (escribir) {
+        printf("\nTOTAL DATOS: %.0f, Aciertos: %.0f, Fallos: %.0f\n",
+               total, acertados, total - acertados);
         printf("%.2f%% de aciertos\n", porcentaje);
     }
-    return(porcentaje);
+
+    return porcentaje;
 }
 
-// Funcion Wilson
+/* ===================== WILSON (ENN) ===================== */
 
-/*tipoLista wilson (tipoLista* lista, int mejork)
+tipoLista wilson (tipoLista* lista, int mejork)
 {
     tipoLista listaAdevolver;
+    nuevaLista(&listaAdevolver);
 
-    compararKNNyAnadirANuevaLista(&listaAdevolver, lista, mejork);
+    celdaLista *actual = lista->ini;
+    char resultadoPredicho[TAM_RESULTADO];
+
+    while (actual != NULL) {
+        predecirClaseKNN(&actual->elem, lista, mejork, actual, resultadoPredicho);
+
+        // Sólo mantenemos los ejemplos bien clasificados por KNN
+        if (strcmp(actual->elem.resultado, resultadoPredicho) == 0) {
+            insertar(&listaAdevolver, actual->elem);
+        }
+
+        actual = actual->sig;
+    }
+
+    // liberamos la lista original
     eliminarLista(lista);
 
-    return (listaAdevolver);
-}*/
+    return listaAdevolver;
+}
 
-// Programa Principal
+/* ===================== UTILIDADES LISTA (para estudio K vs N) ===================== */
+
+int longitudLista(tipoLista *lista)
+{
+    int n = 0;
+    celdaLista *it = lista->ini;
+    while (it != NULL) {
+        n++;
+        it = it->sig;
+    }
+    return n;
+}
+
+// Crea una copia de los primeros N elementos de la lista original
+tipoLista copiarPrimerosN(tipoLista *lista, int N)
+{
+    tipoLista nueva;
+    nuevaLista(&nueva);
+
+    celdaLista *it = lista->ini;
+    int cont = 0;
+
+    while (it != NULL && cont < N) {
+        insertar(&nueva, it->elem);
+        it = it->sig;
+        cont++;
+    }
+
+    return nueva;
+}
+
+/* ===================== PROGRAMA PRINCIPAL ===================== */
 
 int main (void)
 {
@@ -385,7 +430,7 @@ int main (void)
     RangosAtributos rangos;
 
     int input, numMon;
-     float porcentajeKNN;
+    float porcentajeKNN;
     char cont;
 
     nuevaLista(&lista);
@@ -397,6 +442,7 @@ int main (void)
         return 1;
     }
 
+    // saltar cabecera
     if (fgets(buffer1, sizeof(buffer1), f) == NULL) {
         fprintf(stderr, "ERROR: fichero vacío o con error de lectura\n");
         fclose(f);
@@ -415,44 +461,46 @@ int main (void)
     }
     fclose(f);
 
-    // Normalizar datos
-
+    /* Normalizar datos en la lista */
     celdaLista *it = lista.ini;
-
     while (it != NULL)
     {
-        normalizarDatos (&it -> elem, &rangos);
-        it = it -> sig;
+        normalizarDatos (&it->elem, &rangos);
+        it = it->sig;
     }
 
-    // Nuevo Ejemplo
-
+    /* Nuevo ejemplo */
     Datos ejemploNuevo;
     leerEjemploNuevo(&ejemploNuevo);
     normalizarDatos(&ejemploNuevo, &rangos);
-    clasificarEjemploNuevoK1(&ejemploNuevo, &lista);
+    clasificarEjemploNuevoK(&ejemploNuevo, &lista, 1);
 
+    /* Menú de opciones */
     do
     {
-        printf("¿Que quieres hacer? Pulsa 1 [K = 1 con todos], Pulsa 2 [Knn], Pulsa 3 [Wilson con la mejor K], Pulsa 4 [Valor cualquiera de K]: ");
+        printf("\n¿Qué quieres hacer?\n");
+        printf(" 1 - K = 1 con todos\n");
+        printf(" 2 - KNN con K elegido\n");
+        printf(" 3 - Wilson con la mejor K\n");
+        printf(" 4 - Wilson con K cualquiera\n");
+        printf(" 5 - Estudio precisión vs K y nº de ejemplos\n");
+        printf("Opción: ");
         scanf("%d", &input);
 
         if (input == 1)
         {
-            printf("\nClasificación de K1 con todos\n");
+            printf("\nClasificación de K=1 con todos los datos\n");
             compararK1todos (&lista);
         }
-
         else if (input == 2)
         {
-            printf("¿Con cuantos numeros quieres comparar?: ");
+            printf("¿Con cuántos vecinos quieres comparar (K)?: ");
             scanf("%d", &numMon);
             porcentajeKNN = compararKNN (&lista, numMon, true);
         }
-
-        /*else if(input == 3)
+        else if(input == 3)
         {
-            printf("\nClasificacion Wilson con el mejor K\n");
+            printf("\nClasificación Wilson con la mejor K\n");
 
             float mejorPorcentaje;
             int mejorK;
@@ -461,7 +509,8 @@ int main (void)
             mejorPorcentaje = porcentajeKNN;
             mejorK = 1;
 
-            for(int i = 2; i < 98; i++) // A partir de 98 todos los porcentajes son constantes y no cambian
+            // Ajusta el límite superior de K si quieres
+            for(int i = 2; i < 98; i++)
             {
                 porcentajeKNN = compararKNN (&lista, i, false);
 
@@ -471,30 +520,64 @@ int main (void)
                     mejorK = i;
                 }
             }
-            printf("Porcentaje: %.2f%% Mejor-k vecinos: %i\n", mejorPorcentaje, mejorK);
-            sleep(3); // Para que se pueda leer
+            printf("Porcentaje: %.2f%%  Mejor K vecinos: %i\n",
+                   mejorPorcentaje, mejorK);
+            sleep(2);
 
-            printf("Clasificaion Wilson\n");
+            printf("\nAplicando clasificación Wilson...\n");
             lista = wilson (&lista, mejorK);
             imprimirLista (lista);
         }
-
         else if(input == 4)
         {
-            printf("¿Con cuantos numeros quieres comparar?");
+            printf("¿Con cuántos vecinos quieres comparar (K)?: ");
             scanf("%d", &numMon);
 
             lista = wilson (&lista, numMon);
             imprimirLista (lista);
-        }*/
+        }
+        else if (input == 5)
+        {
+            int total = longitudLista(&lista);
+            int pasoEjemplos;
 
-        printf("¿Deseas continuar? (s/n): ");
+            printf("La lista tiene %d ejemplos.\n", total);
+            printf("¿Cada cuántos ejemplos quieres muestrear? (p.ej. 100): ");
+            scanf("%d", &pasoEjemplos);
+
+            if (pasoEjemplos <= 0) pasoEjemplos = total;
+
+            printf("\nN_ejemplos, K, Porcentaje_acierto\n");
+
+            for (int n = pasoEjemplos; n <= total; n += pasoEjemplos)
+            {
+                tipoLista subLista = copiarPrimerosN(&lista, n);
+
+                int Ks[] = {1, 3, 5, 7, 9};
+                int numKs = (int)(sizeof(Ks)/sizeof(Ks[0]));
+
+                for (int i = 0; i < numKs; ++i) {
+                    int k = Ks[i];
+                    if (k >= n) continue; // no tiene sentido K>=n
+
+                    float porc = compararKNN(&subLista, k, false);
+                    printf("%d, %d, %.2f\n", n, k, porc);
+                }
+
+                eliminarLista(&subLista);
+            }
+        }
+        else
+        {
+            printf("Opción no válida.\n");
+        }
+
+        printf("\n¿Deseas continuar? (s/n): ");
         scanf(" %c", &cont);
 
-    } while(cont == 's');
+    } while(cont == 's' || cont == 'S');
 
-    // Eliminar lista
-
+    /* Eliminar lista y salir */
     eliminarLista(&lista);
     return 0;
 }
